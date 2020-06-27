@@ -1,0 +1,16 @@
+.wrapper {
+  position: relative;
+}
+
+.emotionText {
+  width: 100%;
+  text-align: center;
+  color: #fff;
+  position: relative;
+  text-shadow: 3px 3px 0 #000;
+}
+
+.canvas {
+  position: absolute;
+  box-shadow: 0px 10px 5px 0px rgba(0, 0, 0, 0.75);
+}
