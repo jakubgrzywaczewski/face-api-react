@@ -7,26 +7,26 @@ export function showExpressions({ expressions }, text) {
   text.current.textContent = max[0];
 }
 
-export async function detectFace(canvas, displaySize, faceapi, text, video) {
+export function detectFace(canvas, displaySize, faceapi, text, video) {
   const options = new faceapi.TinyFaceDetectorOptions();
-
   faceapi.matchDimensions(canvas.current, displaySize);
 
-  setInterval(async () => {
+  // Zwracamy ID interwału, aby można było go wyczyścić później
+  const intervalId = setInterval(async () => {
     const detections = await faceapi
       .detectAllFaces(video.current, options)
       .withFaceExpressions();
-
     const resizedDetections = faceapi.resizeResults(detections, displaySize);
 
     canvas.current
-      .getContext('2d')
+      .getContext("2d")
       .clearRect(0, 0, canvas.current.width, canvas.current.height);
-
     faceapi.draw.drawDetections(canvas.current, resizedDetections);
 
     if (detections.length) {
       showExpressions(detections[0], text);
     }
   }, 200);
+
+  return intervalId;
 }
