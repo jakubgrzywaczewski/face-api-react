@@ -1,9 +1,9 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import * as faceapi from "face-api.js";
-import useVideo from "../../hooks/useVideo.js";
+import useVideo from "../../hooks/useVideo.jsx";
 import "./Video.css";
-import { displaySize } from "./constant";
-import { detectFace } from "./helper";
+import { displaySize } from "./constant.jsx";
+import { detectFace } from "./helper.jsx";
 
 const Video = () => {
   const canvasRef = useRef();
@@ -11,29 +11,28 @@ const Video = () => {
   const videoRef = useRef();
   const modelsLoaded = useRef(false);
   const intervalID = useRef(null);
+  const [isVideoReady, setIsVideoReady] = useState(false);
 
   const stream = useVideo(videoRef);
 
   useEffect(() => {
-    if (!modelsLoaded.current) {
-      Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(
-          `${process.env.PUBLIC_URL}/models`
-        ),
-        faceapi.nets.faceExpressionNet.loadFromUri(
-          `${process.env.PUBLIC_URL}/models`
-        ),
-      ])
-        .then(() => {
-          modelsLoaded.current = true;
-        })
-        .catch((error) => {
-          console.error("Error loading models:", error);
-        });
-    }
-  }, []);
+    const loadModels = async () => {
+      try {
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+          faceapi.nets.faceExpressionNet.loadFromUri("/models"),
+        ]);
+        modelsLoaded.current = true;
+        setIsVideoReady(true);
+      } catch (error) {
+        console.error("Error loading models:", error);
+      }
+    };
 
-  useEffect(() => {
+    if (!modelsLoaded.current) {
+      loadModels();
+    }
+
     return () => {
       if (intervalID.current) {
         clearInterval(intervalID.current);
@@ -41,16 +40,17 @@ const Video = () => {
     };
   }, []);
 
-  if (stream && videoRef.current && !videoRef.current.srcObject) {
-    videoRef.current.srcObject = stream;
-  }
+  useEffect(() => {
+    if (stream && videoRef.current && !videoRef.current.srcObject) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [stream]);
 
   function handleCanPlay() {
-    if (modelsLoaded.current) {
-      videoRef.current.play();
-      videoRef.current.addEventListener(
-        "play",
-        () => {
+    if (modelsLoaded.current && isVideoReady) {
+      videoRef.current
+        .play()
+        .then(() => {
           intervalID.current = detectFace(
             canvasRef,
             displaySize,
@@ -58,11 +58,10 @@ const Video = () => {
             textRef,
             videoRef
           );
-        },
-        { once: true }
-      );
-    } else {
-      setTimeout(handleCanPlay, 100); // retry after 100ms
+        })
+        .catch((error) => {
+          console.error("Error playing video:", error);
+        });
     }
   }
 
@@ -80,14 +79,14 @@ const Video = () => {
           ref={videoRef}
           onCanPlay={handleCanPlay}
           autoPlay
+          playsInline
+          muted
           width={displaySize.width}
           height={displaySize.height}
-        >
-          <track kind="captions" label="Video captions" />
-        </video>
+        />
       </div>
       <div ref={textRef} className="emotionText">
-        Wait a second
+        {!isVideoReady ? "Loading models..." : "Waiting for video..."}
       </div>
     </>
   );
