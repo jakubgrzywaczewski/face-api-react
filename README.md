@@ -1,11 +1,5 @@
 ## Instalation and run
 
-In the project directory, you can run:
+### 1. `pnpm i`
 
-### 1. `yarn`
-
-### 2. `yarn start`
-
-## URL
-
-[FaceAPI.js library](https://github.com/justadudewhohacks/face-api.js/)
+### 2. `pnpm dev`
